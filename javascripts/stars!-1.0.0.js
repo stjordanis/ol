@@ -1,80 +1,59 @@
-// http://stackoverflow.com/questions/332872/encode-url-in-javascript
-// escape() will not encode: @*/+
-// encodeURI() will not encode: ~!@#$&*()=:/,;?+'
-// encodeURIComponent() will not encode: ~!*()'
-function goto(url) {
-   var address = url;
-   for (var i = 1; i < arguments.length; i++) {
-      address += '/';
-      var arg = arguments[i];
-      if (typeof arg === 'string' || arg instanceof String)
-         address += "'" + escape(arg);
-      else
-         address += arg;
-   }
+var stdInput = unescape(encodeURIComponent(""));
+$("lisp").livequery(function() {
+   stdInput += unescape(encodeURIComponent( $(this).text() ));
+});
 
-   document.location.href = address;
-}
+var Module = {
+  preRun: function() {
+    console.log("preRun");
+    function stdin() {
+      if (stdInput.length == 0) {
+        return undefined;
+      }
 
-function redirect() {
-	setTimeout(function(){goto($('#redirect').attr('href'))}, 2000);
-}
+      var chr = stdInput.charCodeAt(0);
+      stdInput = stdInput.substring(1);
+      return chr;
+    }
+    var stdout = null;
+    var stderr = null;
+    FS.init(stdin, stdout, stderr);
+  },
+   postRun: function() {
+      console.log("postRun");
+   },
 
-/*function load(context) {
+   print: function(text) {
+      document.write(text);
+   },
+   printErr: function(text) {
+      alert(text);
+   },
 
-    var defaults = {
-        parameter1: defaultValue1,
-        parameter2: defaultValue2,
-        ...
-    };
+  setStatus: function(text) {
+    console.log(text);
+  },
+  totalDependencies: 0,
+  monitorRunDependencies: function(left) {
+    console.log(left);
+    this.totalDependencies = Math.max(this.totalDependencies, left);
+    Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+  }
+};
+Module.setStatus('Downloading...');
+window.onerror = function(event) {
+  // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+  Module.setStatus('Exception thrown, see JavaScript console');
+  //spinnerElement.style.display = 'none';
+  Module.setStatus = function(text) {
+    if (text) Module.printErr('[post-exception status] ' + text);
+  };
+};
 
-    var context = extend(defaults, context);
-
-    // do stuff
-}
-function extend() {
-    for (var i = 1; i < arguments.length; i++)
-        for (var key in arguments[i])
-            if (arguments[i].hasOwnProperty(key))
-                arguments[0][key] = arguments[i][key];
-    return arguments[0];
-}
-
-function load(context) {
-   var parameter1 = context.parameter1 || defaultValue1,
-       parameter2 = context.parameter2 || defaultValue2;
-
-   // do stuff
-}
-
-log() {
-    let args = Array.prototype.slice.call(arguments);
-    args = ['MyObjectName', this.id_].concat(args);
-    console.log.apply(console, args);
-}
-*/
-
-function radio(name, v) {
-	var i = 0;
-	var s = 0;
-	$('input[name='+name+']').each(function() {
-		if (i == v)
-			this.checked = true;
-		if (this.checked)
-			s = i;
-		i += 1;
-	});
-	return s;
-}
-function check(name, v) {
-	var i = 1;
-	var s = 0;
-	$('input[name='+name+']').each(function() {
-		if (i == (v & i))
-			this.checked = true;
-		if (this.checked)
-			s = i | s;
-		i <<= 1;
-	});
-	return s;
-}
+// need to do this at runtime!
+$(function() {
+   var script = document.createElement('script');
+   script.src = "javascripts/olvm-1.0.js"; // 1.0-154-g1dfdc2f
+   document.body.appendChild(script);
+});
+// load Otus Lisp handler:
