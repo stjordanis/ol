@@ -1,7 +1,12 @@
 var stdInput = unescape(encodeURIComponent(""));
 $("lisp").livequery(function() {
-   stdInput += unescape(encodeURIComponent( $(this).text() ));
+   console.log($(this).html());
+   stdInput += unescape(encodeURIComponent( $(this).html() ));
 });
+function tolisp(text)
+{
+   stdInput += unescape(encodeURIComponent( text ));
+}
 
 var Module = {
   preRun: function() {
@@ -24,6 +29,7 @@ var Module = {
    },
 
    print: function(text) {
+      //document.innerHTML += text;
       document.write(text);
    },
    printErr: function(text) {

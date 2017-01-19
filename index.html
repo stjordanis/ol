@@ -13,10 +13,16 @@
          display: none;
       }
    </style>
+   <script>
+   myFunction = function() {
+      tolisp('(print "button pushed")');
+   }
+   </script>
 </head>
 <body>Loading...
 <lisp>
-   (print "<div>")
    (print "hello, your lisp interpreter works.")
-   (print "</div>")
+   (print "<hr>")
+   (print "window location is: ["
+      (syscall 1201 type-string (c-string "window.location.href") #f) "]")
 </lisp></body>
