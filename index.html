@@ -8,15 +8,39 @@
 
    <link rel='stylesheet' href='stylesheets/form.css'>
    <script src='javascripts/stars!-1.0.0.js'></script>
-   <script>
-   myFunction = function() {
-      tolisp('(print "button pushed")'); // sample
-   }
-   </script>
    <!-- todo:
         add <noembed>
         add <noframes>
         add <noscript> -->
+
+<!-- useful js scripts -->
+<script>
+function goto(url, ok, fail) {
+   var address = url;
+   for (var i = 1; i < arguments.length; i++) {
+      address += '/';
+      var arg = arguments[i];
+      if (typeof arg === 'string' || arg instanceof String)
+         address += "'" + escape(arg);
+      else
+         address += arg;
+   }
+
+   //was: document.location.href = address;
+   $.ajax({
+      url: address,
+      context: document.body
+   }).done(function() {
+      tolisp('(print "ok")');
+   }).error(function() {
+      tolisp('(print "fail")');
+   });
+}
+
+function redirect() {
+	setTimeout(function(){goto($('#redirect').attr('href'))}, 2000);
+}
+</script>
 
 </head><body><!-- ===================================== -->
    <div id='loading'>
@@ -38,27 +62,6 @@
    </section>
    </div>
 
-<!-- javascript part -->
-<script>
-function goto(url) {
-   var address = url;
-   for (var i = 1; i < arguments.length; i++) {
-      address += '/';
-      var arg = arguments[i];
-      if (typeof arg === 'string' || arg instanceof String)
-         address += "'" + escape(arg);
-      else
-         address += arg;
-   }
-
-   document.location.href = address;
-}
-
-function redirect() {
-	setTimeout(function(){goto($('#redirect').attr('href'))}, 2000);
-}
-</script>
-
 <!-- ol part -->
 <!-- using text/x-frozen-html for content: http://stackoverflow.com/questions/4397577/how-do-i-get-the-original-innerhtml-source-without-the-javascript-generated-cont -->
 <script id="lisp" type="text/x-frozen-html">
@@ -66,21 +69,20 @@ function redirect() {
 (define (html . args)
    (let html ((args args))
       (for-each (lambda (arg)
-         (if arg
+         (if arg ; not #false
             (if (list? arg)
                (html arg)
                (if (not (null? arg))
                   (display arg)))))
-         args))
-   (display "\n")) ;flush the output
+         args)))
 
+; tag split into parts due to http://stackoverflow.com/questions/236073/why-split-the-script-tag-when-writing-it-with-document-write/236106#236106
 (define-syntax script
 (syntax-rules ()
    ((script rest...)
       (list
-         "<script>"
+         "<" "script>"
            rest...
-         ; split into parts due to http://stackoverflow.com/questions/236073/why-split-the-script-tag-when-writing-it-with-document-write/236106#236106
          "</" "script" ">"))))
 
 (define-syntax tag
@@ -254,11 +256,11 @@ function redirect() {
 ;$('head').append('<link rel="stylesheet" type="text/css" href="style.css">');
 
 ; =-( main )=-------------------------------
+; this will be the first content data staff
+; load main javascript with all weird staff:
+(print)
+
    (html (script "$('#loading').remove()"))
-   ;(html (script "$('head').append(
-   ;   '<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheets/normalize.css\">
-   ;    <link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheets/form.css\">')"))
-         
    (html
       (section (class "loginform cf")
          ; http://www.scriptol.com/html5/forms.php
@@ -277,13 +279,30 @@ function redirect() {
                    (input (type "submit") (value "Login"))))
             )))
 
+   (html
       (script
+         "console.log('set submit button');"
          "$('#login').submit(function(event) {
-            goto( login.action,
-                  login.elements.usermail.value,
-                  login.elements.password.value);
+             goto( login.action,
+                   login.elements.usermail.value,
+                   login.elements.password.value);
             event.preventDefault();
-         });")
+         });"
+         "console.log('2 set submit button');"
+         ))
+   (print)
 
-;(print) ;flush
+;                        ; ok
+;                        (script "goto('/home/"session"')")
+;                        ; error
+;                        (section (class "loginform cf")
+;                           (form (id "sorry")
+;                                 (action "/")
+;                                 (onsubmit "window.location = '/'; return false")
+;                              (ul
+;                                 (li (label "Sorry, name or password is invalid."))
+;                                 (li (a (href "/") "Please, try again") "."))))))))
+
+
+(print) ;flush
 </script></body></html>
