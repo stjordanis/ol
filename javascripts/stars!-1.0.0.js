@@ -1,6 +1,6 @@
 var stdInput = unescape(encodeURIComponent(""));
-$("lisp").livequery(function() {
-   console.log($(this).html());
+$("#lisp").livequery(function() {
+   //console.log($(this).html());
    stdInput += unescape(encodeURIComponent( $(this).html() ));
 });
 function tolisp(text)
@@ -9,8 +9,8 @@ function tolisp(text)
 }
 
 var Module = {
-  preRun: function() {
-    console.log("preRun");
+   preRun: function() {
+      console.log("preRun");
     function stdin() {
       if (stdInput.length == 0) {
         return undefined;
@@ -23,14 +23,14 @@ var Module = {
     var stdout = null;
     var stderr = null;
     FS.init(stdin, stdout, stderr);
-  },
+   },
    postRun: function() {
       console.log("postRun");
    },
 
    print: function(text) {
-      //document.innerHTML += text;
-      document.write(text);
+      //document.write(text);
+      $("body").append(text);
    },
    printErr: function(text) {
       alert(text);

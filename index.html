@@ -2,27 +2,288 @@
 <html>
 <head>
    <title>SIMPLE login</title>
-   <link rel='stylesheet' href='stylesheets/normalize.css'> <!-- will be destroyed after document load -->
+   <link rel='stylesheet' href='stylesheets/normalize.css'>
    <script src='javascripts/jquery-2.1.1.min.js'> </script>
    <script src='javascripts/jquery.livequery.js'> </script>
 
-   <link rel='stylesheet' href='stylesheets/form.css'> <!-- will be destroyed after document load -->
-   <script src='javascripts/stars!-1.0.0.js'></script> <!-- required -->
-   <style>
-      lisp {
-         display: none;
-      }
-   </style>
+   <link rel='stylesheet' href='stylesheets/form.css'>
+   <script src='javascripts/stars!-1.0.0.js'></script>
    <script>
    myFunction = function() {
-      tolisp('(print "button pushed")');
+      tolisp('(print "button pushed")'); // sample
    }
    </script>
-</head>
-<body>Loading...
-<lisp>
-   (print "hello, your lisp interpreter works.")
-   (print "<hr>")
-   (print "window location is: ["
-      (syscall 1201 type-string (c-string "window.location.href") #f) "]")
-</lisp></body>
+   <!-- todo:
+        add <noembed>
+        add <noframes>
+        add <noscript> -->
+
+</head><body><!-- ===================================== -->
+   <div id='loading'>
+   <section class='loginform cf'>
+      <form id='login'>
+         <ul><label id='loading-text'>
+            Please wait, while loading the rendering engine
+         </label></ul>
+      </form>
+      <script> // show points after "loading" text
+         (function ticker(){
+            var loading = $('#loading-text');
+            if (loading.length) {
+               loading.append('.');
+               setTimeout(ticker, 1000);
+            }
+         })();
+      </script>
+   </section>
+   </div>
+
+<!-- javascript part -->
+<script>
+function goto(url) {
+   var address = url;
+   for (var i = 1; i < arguments.length; i++) {
+      address += '/';
+      var arg = arguments[i];
+      if (typeof arg === 'string' || arg instanceof String)
+         address += "'" + escape(arg);
+      else
+         address += arg;
+   }
+
+   document.location.href = address;
+}
+
+function redirect() {
+	setTimeout(function(){goto($('#redirect').attr('href'))}, 2000);
+}
+</script>
+
+<!-- ol part -->
+<!-- using text/x-frozen-html for content: http://stackoverflow.com/questions/4397577/how-do-i-get-the-original-innerhtml-source-without-the-javascript-generated-cont -->
+<script id="lisp" type="text/x-frozen-html">
+
+(define (html . args)
+   (let html ((args args))
+      (for-each (lambda (arg)
+         (if arg
+            (if (list? arg)
+               (html arg)
+               (if (not (null? arg))
+                  (display arg)))))
+         args))
+   (display "\n")) ;flush the output
+
+(define-syntax script
+(syntax-rules ()
+   ((script rest...)
+      (list
+         "<script>"
+           rest...
+         ; split into parts due to http://stackoverflow.com/questions/236073/why-split-the-script-tag-when-writing-it-with-document-write/236106#236106
+         "</" "script" ">"))))
+
+(define-syntax tag
+(syntax-rules ()
+   ((tag . rest)
+      (list ">" . rest))))
+
+
+
+
+(define-syntax section
+(syntax-rules (- class)
+   ((section - (class value) . rest)
+      (list
+         " class=\""value"\""
+         (section - . rest)))
+
+   ((section - . rest)
+      (list ">" . rest))
+   ((section . rest)
+      (list
+         "<section"
+            (section - . rest)
+         "</section>"))))
+
+
+(define-syntax form
+(syntax-rules (- id action method accept-charset onsubmit name)
+   ((form - (id value...) . rest)
+      (list
+         " id=\""value..."\""
+         (form - . rest)))
+   ((form - (action value...) . rest)
+      (list
+         " action=\""value..."\""
+         (form - . rest)))
+   ((form - (name value...) . rest)
+      (list
+         " name=\""value..."\""
+         (form - . rest)))
+   ((form - (onsubmit value...) . rest)
+      (list
+         " onsubmit=\""value..."\""
+         (form - . rest)))
+
+   ((form - . rest)
+      (list ">" . rest))
+   ((form . rest)
+      (list
+         "<form"
+         " method='get'"
+         " accept-charset='utf-8'"
+            (form - . rest)
+         "</form>"))))
+
+(define-syntax a
+(syntax-rules (- id href style)
+   ((a - (id value...) . rest)
+      (list
+         " id=\""value..."\""
+         (a - . rest)))
+   ((a - (href value...) . rest)
+      (list
+         " href=\""value..."\""
+         (a - . rest)))
+   ((a - (style value...) . rest)
+      (list
+         " style=\""value..."\""
+         (a - . rest)))
+
+   ((a - . rest)
+      (list ">" . rest))
+   ((a . rest)
+      (list
+         "<a"
+            (a - . rest)
+         "</a>"))))
+
+(define-syntax ul
+(syntax-rules ()
+   ((ul rest...)
+      (list
+         "<ul>"
+           rest...
+         "</ul>"))))
+
+(define-syntax br
+(syntax-rules ()
+   ((br)
+      "<br>")))
+(define-syntax hr
+(syntax-rules ()
+   ((hr)
+      "<hr>")))
+
+(define-syntax li
+(syntax-rules (- style)
+   ((li - (style value) rest...)
+      (list
+         " style=\""value"\""
+         (li - rest...)))
+
+   ((li - rest...)
+      (list ">" rest...))
+   ((li rest...)
+      (list
+         "<li"
+           (li - rest...)
+         "</li>"))))
+(define-syntax li-
+   (syntax-rules ()
+      ((li- rest...)
+         (list
+            "<li style='clear:both'>"
+              rest...
+            "</li>"))))
+
+
+
+(define-syntax label
+(syntax-rules ()
+   ((label rest...)
+      (list
+         "<label>"
+            rest...
+         "</label>"))))
+
+(define-syntax input
+(syntax-rules (- id type name placeholder required readonly value)
+   ((input - (id arg) rest...)
+      (list
+         " id=\""arg"\""
+         (input - rest...)))
+   ((input - (type arg) rest...)
+      (list
+         " type=\""arg"\""
+         (input - rest...)))
+   ((input - (name arg) rest...)
+      (list
+         " name=\""arg"\""
+         (input - rest...)))
+   ((input - (placeholder arg) rest...)
+      (list
+         " placeholder=\""arg"\""
+         (input - rest...)))
+   ((input - (required) rest...)
+      (list
+         " required"
+         (input - rest...)))
+;   ((input - (readonly is) rest...)
+;      (list
+;         (if is " readonly")
+;         (input - rest...)))
+   ((input - (readonly) rest...)
+      (list
+         " readonly"
+         (input - rest...)))
+   ((input - (value arg) rest...)
+      (list
+         " value=\""arg"\""
+         (input - rest...)))
+
+   ((input - rest...)
+      (list ">" rest...))
+   ((input rest...)
+      (list
+         "<input"
+           (input - rest...)))))
+
+;(define (stylesheet url)
+;$('head').append('<link rel="stylesheet" type="text/css" href="style.css">');
+
+; =-( main )=-------------------------------
+   (html (script "$('#loading').remove()"))
+   ;(html (script "$('head').append(
+   ;   '<link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheets/normalize.css\">
+   ;    <link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheets/form.css\">')"))
+         
+   (html
+      (section (class "loginform cf")
+         ; http://www.scriptol.com/html5/forms.php
+         (form (id "login")
+               (action "/login")
+            (ul
+               (li (label "Email")
+                   (input (id "usermail") (type "usermail")
+                          (placeholder "yourname@mail.com")
+                          (required)))
+               (li (label "Password")
+                   (input (id "password") (type "password")
+                          (placeholder "strong passphrase")
+                          (required)))
+               (li-
+                   (input (type "submit") (value "Login"))))
+            )))
+
+      (script
+         "$('#login').submit(function(event) {
+            goto( login.action,
+                  login.elements.usermail.value,
+                  login.elements.password.value);
+            event.preventDefault();
+         });")
+
+;(print) ;flush
+</script></body></html>
