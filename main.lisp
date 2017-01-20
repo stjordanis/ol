@@ -137,7 +137,8 @@
                (stat (syscall 4 path #f #f)))
             (if stat (let ((file (fopen path 0)))
                (print "Sending 200 OK, file size is " (ref stat 8) ", name is " path)
-               (send "HTTP/1.1 200 OK\r\n"
+               (send "HTTP/1.0 200 OK\r\n"
+                     "Connection: close\r\n"
                      "Content-Type: " content-type "\r\n"
                      "Content-Length: " (ref stat 8) "\r\n"
                      "Server: " (car *version*) "/" (cdr *version*) "\r\n"
@@ -148,7 +149,8 @@
             ;else
             (begin
                (print "Sending 404 Not Found, file name is " path)
-               (send "HTTP/1.1 404 Not Found\r\n"
+               (send "HTTP/1.0 404 Not Found\r\n"
+                     "Connection: close\r\n"
                      "Content-Type: text/html\r\n"
                      "Server: " (car *version*) "/" (cdr *version*) "\r\n"
                      "\r\n")
@@ -191,10 +193,12 @@
                (simple "/login/" (username password)
                   (let ((remote_address (car (syscall 51 fd #f #f)))
                         (session (db:value "SELECT lower(hex(randomblob(16)))"))) ; сеансовый ключ
+                     (print "session: " session)
                      (if (db:value "UPDATE accounts SET session=?, remote_address=? WHERE name=? AND password=?"
                                     session remote_address username password)
                         (respond "200 OK" session)
-                        (respond "401 Unauthorized"))))
+                        (respond "401 Unauthorized")))
+                  (close #t))
 
                ; ===============================================================
                ; всякая серверная математика
