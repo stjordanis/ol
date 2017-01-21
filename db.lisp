@@ -97,7 +97,8 @@
                   (cons v t))
                (else
                   (sqlite3-finalize statement)
-                  (runtime-error "Can't execute SQL statement" #t))))))))))
+                  (runtime-error "Can't execute SQL statement" #t))))))))
+   '()))
 
 
 ; возвращает только одно значение из запроса (если было запрошено одно, иначе целую строку)

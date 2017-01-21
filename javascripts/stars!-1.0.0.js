@@ -2,10 +2,10 @@
 
 function goto(url, ok, fail) {
    console.log('trying to go to ' + url);
-   var address = url;
-   for (var i = 1; i < arguments.length; i++) {
+   var address = url[0];
+   for (var i = 1; i < url.length; i++) {
       address += '/';
-      var arg = arguments[i];
+      var arg = url[i];
       if (typeof arg === 'string' || arg instanceof String)
          address += "'" + escape(arg);
       else
@@ -13,13 +13,15 @@ function goto(url, ok, fail) {
    }
 
    //was: document.location.href = address;
+   console.log(url);
    $.ajax({
       url: address,
       context: document.body
-   }).done(function() {
-      tolisp('(print "ok")');
-   }).error(function() {
-      tolisp('(print "fail")');
+   }).done(function(text) {
+      console.log("trying to call " + '('+ok+' '+ text +')');
+      tolisp('('+ok+' '+ text +')\n');
+   }).error(function(text) {
+      tolisp('('+fail+' '+ text +')\n');
    });
 }
 

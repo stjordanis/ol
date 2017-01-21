@@ -72,10 +72,14 @@ $(function() {
 
 
 (define-syntax section
-(syntax-rules (- class)
+(syntax-rules (- id class)
    ((section - (class value) . rest)
       (list
          " class=\""value"\""
+         (section - . rest)))
+   ((section - (id value) . rest)
+      (list
+         " id=\""value"\""
          (section - . rest)))
 
    ((section - . rest)
@@ -230,17 +234,84 @@ $(function() {
          "<input"
            (input - rest...)))))
 
-;(define (stylesheet url)
-;$('head').append('<link rel="stylesheet" type="text/css" href="style.css">');
+(define-syntax table
+(syntax-rules ()
+   ((table rest...)
+      (list
+         "<table>"
+           rest...
+         "</table>"))))
+(define-syntax tr
+(syntax-rules ()
+   ((tr rest...)
+      (list
+         "<tr>"
+           rest...
+         "</tr>"))))
+(define-syntax th
+(syntax-rules ()
+   ((th rest...)
+      (list
+         "<th>"
+           rest...
+         "</th>"))))
+(define-syntax td
+(syntax-rules (- colspan style)
+   ((td - (style value) rest...)
+      (list
+         " style="value
+         (td - rest...)))
+   ((td - (colspan value) rest...)
+      (list
+         " colspan="value
+         (td - rest...)))
+
+   ((td - rest...)
+      (list ">" rest...))
+   ((td rest...)
+      (list
+         "<td"
+           (td - rest...)
+         "</td>"))))
+
+
+(define (map* f a)
+   (let loop ((a a))
+      (if (null? a)
+         '()
+         (cons (apply f (car a)) (loop (cdr a))))))
+
+
+(define (clear name)
+   (html (script "$('#"name"').remove()")))
 
 ; =-( main )=-------------------------------
 ; this will be the first content data staff
 ; load main javascript with all weird staff:
 (print)
-
    (html (script "$('#loading').remove()"))
+
+(define (assign-session content)
+   (fork-server 'sess (lambda ()
+   (let this ((session content))
+   (let* ((envelope (wait-mail))
+          (sender msg envelope))
+      (mail sender session))))))
+;(fork-server 'session (lambda ()
+;(let this ((session value))
+;(let* ((envelope (wait-mail))
+;       (sender msg envelope))
+;   (tuple-case msg
+;      ((set new)
+;         (this new))
+;      ((get)
+;         (mail sender session)
+;         (this session)))))))
+
+(define (show-login-section)
    (html
-      (section (class "loginform cf")
+      (section (id "main")
+               (class "loginform cf")
          ; http://www.scriptol.com/html5/forms.php
          (form (id "login")
                (action "/login")
@@ -254,19 +325,143 @@ $(function() {
                           (placeholder "strong passphrase")
                           (required)))
                (li-
-                   (input (type "submit") (value "Login"))))
-            )))
+                   (input (type "submit") (value "Login")))))
+         (script
+               "$('#login').submit(function(event) {
+               goto([login.action,
+                     login.elements.usermail.value,
+                     login.elements.password.value]
+                     ,'login-ok', '-fail-');
+               event.preventDefault();
+            });")))
+   (print))
 
-   (html
-      (script
-         "$('#login').submit(function(event) {
-             goto( login.action,
-                   login.elements.usermail.value,
-                   login.elements.password.value);
-            event.preventDefault();
-         });"
-         ))
-   (print)
+; если логин прошел нормально, покажем домашний скрин
+(define (login-ok session)
+   (assign-session session)
+   (html (script "console.log('login-ok/ session: "session"')"))
+   (html (script "
+            goto(['/home', '"session"']
+                  ,'home', '-fail-');"))
+   (print))
+
+(define (home username data)
+   (define session (interact 'sess #f))
+   (html (script "console.log('home/ data: "data"')"))
+   (clear "main")
+   (html "<div id='main'>"
+         "<br>"
+         "Hello " username
+         "<br><hr><br>"
+
+   ; в эту табличку мы поместим все расы игрока и играемые ними игры:
+         (table
+               (tr (th "Race") (th "Game"))
+               (map* (lambda (rid name games)
+                  (tr
+                     (td
+                        (a (href "/race/"session"/"rid) name))
+                     (td
+                        (table
+                           (map* (lambda (gid name state)
+                                       (tr
+                                          (td gid) (td name)
+                                          (td (a (href "/game/"session"/"gid)
+                                                (if (eq? state 0)
+                                                   "(edit)"
+                                                   "(view)")))
+                                          (td
+                                             (case state ; todo: make new query to check the current race state, not common
+                                                (0 "New one")
+                                                (1 "Waiting for players")
+                                                (2 "Wait for turns")
+                                                (3 "Thinking...")
+                                                (4 "Closed")
+                                                (else "Unknown")))))
+                              games)
+                           (tr
+                              (td (colspan 4) (style "text-align:center")
+                                 (a (href "/create-new-game/"session"/"rid) "(create new game)")))
+                     ))
+                  ))
+                  data)
+               (tr (td (colspan 2) (style "text-align:center")
+                  (a (href "/create-new-race/"session) "(create new race)"))))
+
+         "</div>")
+   (print))
+
+;                     (db:map (db:query
+;                        "SELECT  id,name  FROM races WHERE account=?" account)
+;                        (lambda (id name) (tr
+;                           (td
+;                              (a (href "/race/"session"/"id) name))
+;                           (td
+;                              (table
+;                                 (db:map (db:query
+;                                    "SELECT  id,name,state  FROM games WHERE id IN (
+;                                       SELECT DISTINCT game FROM game_players WHERE race=?
+;                                     )" id)
+;                                    (lambda (id name state)
+;                                       (tr
+;                                          (td id) (td name)
+;                                          (td (a (href "/game/"session"/"id)
+;                                                (if (eq? state 0)
+;                                                   "(edit)"
+;                                                   "(view)")))
+;                                          (td
+;                                             (case state ; todo: make new query to check the current race state, not common
+;                                                (0 "New one")
+;                                                (1 "Waiting for players")
+;                                                (2 "Wait for turns")
+;                                                (3 "Thinking...")
+;                                                (4 "Closed")
+;                                                (else "Unknown"))))))
+;                                 (tr
+;                                    (td (colspan 4) (style "text-align:center")
+;                                       (a (href "/create-new-game/"session"/"id) "(create new game)")))
+;                                 )))))
+;                     (tr (td (colspan 2) (style "text-align:center")
+;                        (a (href "/create-new-race/"session) "(create new race)")))
+;                  )))
+
+
+
+
+
+
+
+
+
+
+; let's game begin
+(show-login-section) ; temp skip the login screen
+;(login-ok "cb4673f67fee197cab1f30ab52cbbf66")
+
+(define (-fail- answer)
+   (print "<br>fail: " answer))
+
+;(define (login-ok session)
+;   ; login ok, let's get values to home screen
+;         ; request new home
+;   (html (script "
+;            goto(['/home/', "session"],
+;                  ,'home', '-fail-');
+;         "))
+
+
+; ===============================================================
+; домашний экран пользователя
+;(define (home session)
+;   (html (script "$('#main').remove()"))
+;
+;
+;      (
+;
+;
+;)
+
+
 
 ;                        ; ok
 ;                        (script "goto('/home/"session"')")
@@ -280,5 +475,5 @@ $(function() {
 ;                                 (li (a (href "/") "Please, try again") "."))))))))
 
 
-(print) ;flush
+(print) ;flush (на всякий случай)
 </script></body></html>

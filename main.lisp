@@ -107,8 +107,8 @@
       (send "HTTP/1.1 " status-code "\r\n")
       (send "Content-Type: text/html\r\n"
             "Server: " (car *version*) "/" (cdr *version*) "\r\n"
-            "\r\n"
-            args))
+            "\r\n")
+      (for-each (lambda (x) (write-to fd x)) args))
    (define (send-200) (respond "200 OK"))
    (define (send-204) (respond "204 No Content"))
    (define (send-400) (respond "400 Bad Request"))
@@ -199,6 +199,68 @@
                         (respond "200 OK" session)
                         (respond "401 Unauthorized")))
                   (close #t))
+
+               ; ===============================================================
+               ; домашний экран пользователя
+               (action "/home/" (session)
+                  ; отправим username '(игры полльзователя погруппированные по расам)
+                  (respond "200 OK"
+                     (db:value "SELECT name FROM accounts WHERE id = ?" account)
+;                     (db:map (db:query
+;                        "SELECT  id,name  FROM races WHERE account=?" account)
+;                        (lambda (id name) 
+;                           (print id ", " name)
+;                           (list id name '(
+;                              (1 "game 1" 0)
+;                              (2 "game 2" 0)))))))
+                     (list
+                        ; id name
+                        '(1 "race 1" (
+                           (1 "game 1" 0)
+                           (2 "game 2" 0)))
+                        '(2 "race 2" (
+                           (3 "game 3" 1)
+                           (4 "game 4" 0))))))
+
+
+;
+;                  ; в эту табличку мы поместим все расы игрока и играемые ними игры:
+;                  (table
+;                     (tr (th "Race") (th "Game"))
+;
+;                     (db:map (db:query
+;                        "SELECT  id,name  FROM races WHERE account=?" account)
+;                        (lambda (id name) (tr
+;                           (td
+;                              (a (href "/race/"session"/"id) name))
+;                           (td
+;                              (table
+;                                 (db:map (db:query
+;                                    "SELECT  id,name,state  FROM games WHERE id IN (
+;                                       SELECT DISTINCT game FROM game_players WHERE race=?
+;                                     )" id)
+;                                    (lambda (id name state)
+;                                       (tr
+;                                          (td id) (td name)
+;                                          (td (a (href "/game/"session"/"id)
+;                                                (if (eq? state 0)
+;                                                   "(edit)"
+;                                                   "(view)")))
+;                                          (td
+;                                             (case state ; todo: make new query to check the current race state, not common
+;                                                (0 "New one")
+;                                                (1 "Waiting for players")
+;                                                (2 "Wait for turns")
+;                                                (3 "Thinking...")
+;                                                (4 "Closed")
+;                                                (else "Unknown"))))))
+;                                 (tr
+;                                    (td (colspan 4) (style "text-align:center")
+;                                       (a (href "/create-new-game/"session"/"id) "(create new game)")))
+;                                 )))))
+;                     (tr (td (colspan 2) (style "text-align:center")
+;                        (a (href "/create-new-race/"session) "(create new race)")))
+;                  )))
 
                ; ===============================================================
                ; всякая серверная математика
