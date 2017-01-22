@@ -21,7 +21,9 @@ function goto(url, ok, fail) {
       console.log("trying to call " + '('+ok+' '+ text +')');
       tolisp('('+ok+' '+ text +')\n');
    }).error(function(text) {
-      tolisp('('+fail+' '+ text +')\n');
+      console.log(text);
+      console.log("trying to call " + '('+fail+' '+ text.status +')');
+      tolisp('('+fail+' '+ text.status +')\n');
    });
 }
 
