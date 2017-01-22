@@ -224,6 +224,15 @@
                               (3 "game 3" 1)
                               (4 "game 4" 0)))))))
 
+
+               (action "/create-new-race/" (session)
+                  (print "Creating new race. ")
+                  (let ((race (db:value "INSERT INTO races (name, account) VALUES (?,?)" "new race" account)))
+                     (if race
+                        (respond "200 OK" race)
+                        (respond "400 Server error"))))
+
+
                ; ===============================================================
                ; всякая серверная математика
                (simple "/get-advantage-points-left/" (prt lrts)

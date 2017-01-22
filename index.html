@@ -424,16 +424,20 @@ $(function() {
                                  (a (href "/create-new-game/"session"/"rid) "(create new game)")))))))
                   data)
                (tr (td (colspan 2) (style "text-align:center")
-                  ;(a (href "/create-new-race/"session) "(create new race)")
-                  (a (href "#")
-                     ;(onclick "tolisp('(create-new-race)'); return false;")
-                     "(create new race)")
-                  (action "(more more more)"
+                  (action "(create new race)"
                      ("/create-new-race" session) "say-ok" "say-fail")
                   )))
 
          "</div>")
    (print))
+
+(define (create-new-race-ok id)
+   (define session (get-session))
+   (html (script "
+            goto(['/home', '"session"']
+                  ,'home', 'say-fail');"))
+   (print)
+)
 
 (define (say-ok ok)
    (print ok))
