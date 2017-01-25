@@ -28,7 +28,6 @@
 ;       возвращает url-decoded строки, в ином случае - числа через (string->number)
 ; а вообще, просто добавить сигнатуру вызова и автоматическую его парсилку
 
-
 (define-syntax actions
    (syntax-rules (else action account simple al string-split string-split-with-auth close)
       ((actions) #false)
@@ -51,51 +50,6 @@
             ((lambda () exp . rest-exps)) ; (begin ...)
             (actions . rest)))))
 
-; todo: please,  return sendfile
-
-; todo: 401 Unauthorized
-; todo: 403 Forbidden
-;(define (send-404 fd)
-;(let*((send (lambda args
-;         (for-each (lambda (arg)
-;            (display-to fd arg)) args))))
-;   (print "Sending error")
-;   (print "Sending 404 Not Found")
-;
-;   (send "HTTP/1.0 404 Not Found\n")
-;   (send "Connection: close\n"
-;         "Content-Type: text/html\n"
-;         "Server: " (car *version*) "/" (cdr *version*) "\n\n")
-;   (send "<HTML><BODY>"
-;         "<h1>404 Not Found OK</h1>")))
-
-;(define (sendfile fd content-type filename)
-;   (print "Sending as '" content-type "' " filename)
-;(let*((path (if (string? filename) (str-app "." (c-string filename)) "?"))
-;      (send (lambda args
-;         (for-each (lambda (arg)
-;            (display-to fd arg)) args)))
-;      (stat (syscall 4 path #f #f)))
-;   (if stat (begin
-;      (print "Sending 200 OK, file size is " (ref stat 8) ", name is " path)
-;      (send "HTTP/1.0 200 OK\n"
-;            ;"Connection: close\n"
-;            "Content-Type: " content-type "\n"
-;            "Content-Length: " (ref stat 8) "\n"
-;            "Server: " (car *version*) "/" (cdr *version*) "\n\n")
-;      (write-vector (file->vector path) fd)
-;      (print "File sent."))
-;   ;else
-;   (begin
-;      (print "Sending 404 Not Found")
-;      (send "HTTP/1.0 404 Not Found\n"
-;            ;"Connection: close\n"
-;            "Content-Type: text/html\n"
-;            "Server: " (car *version*) "/" (cdr *version*) "\n\n")
-;      (send "<HTML><BODY>"
-;            "<h1>404 Not Found OK</h1>"
-;            "<h4>url: " filename "</h4>")))))
-
 ;====================================================
 (http:run 8080 (lambda (fd request headers send close)
    (print "Request: " request)
@@ -104,11 +58,12 @@
    ; todo: rename to answer
    (define (respond status-code . args)
       (print "Sending " status-code)
-      (send "HTTP/1.1 " status-code "\r\n")
+      (send "HTTP/1.0 " status-code "\r\n")
       (send "Content-Type: text/html\r\n"
             "Server: " (car *version*) "/" (cdr *version*) "\r\n"
             "\r\n")
-      (for-each (lambda (x) (write-to fd x)) args))
+      (for-each (lambda (x) (write-to fd x)) args)
+      (close #t))
    (define (send-200) (respond "200 OK"))
    (define (send-204) (respond "204 No Content"))
    (define (send-400) (respond "400 Bad Request"))
@@ -116,8 +71,8 @@
    (define (send-404) (respond "404 Not Found"))
    (define (send-405) (respond "405 Method Not Allowed"))
 
-   ; эта функция обходит дерево рекурсивно и отправляет его в выходной поток
-   ; null и #false в выходной поток НЕ отправляются!
+   ; обходит дерево рекурсивно и отправляет его в выходной поток
+   ; #null и #false в выходной поток НЕ отправляются!
    (define (html . args)
       (let html ((args args))
          (for-each (lambda (arg)
@@ -128,6 +83,7 @@
                      (display-to fd arg)))))
             args)))
 
+   ; отправить файл в сокет
    (define (sendfile content-type filename)
       (print "Sending as '" content-type "' " filename)
       (if (has-two-dots? filename)
@@ -197,8 +153,7 @@
                      (if (db:value "UPDATE accounts SET session=?, remote_address=? WHERE name=? AND password=?"
                                     session remote_address username password)
                         (respond "200 OK" session)
-                        (respond "401 Unauthorized")))
-                  (close #t))
+                        (respond "401 Unauthorized"))))
 
                ; ===============================================================
                ; домашний экран пользователя

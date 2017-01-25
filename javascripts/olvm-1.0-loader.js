@@ -1,24 +1,20 @@
-var stdInput = unescape(encodeURIComponent( "" ));
-$("#lisp").livequery(function() {
-   //console.log($(this).html());
-   stdInput += unescape(encodeURIComponent( $(this).html() ));
-});
-function tolisp(text)
+function tolisp( text )
 {
-   stdInput += unescape(encodeURIComponent( text ));
+   Module.send(text);
 }
 
-var Module;
-Module = {
+var Ol, Module;  // global "Ol" variable
+Ol = Module = {
+   oltext: unescape(encodeURIComponent( "" )),
    preRun: function() {
       console.log("preRun");
       function stdin() {
-         if (stdInput.length == 0) {
+         if (Module.oltext.length == 0) {
             return undefined;
          }
 
-         var chr = stdInput.charCodeAt(0);
-         stdInput = stdInput.substring(1);
+         var chr = Module.oltext.charCodeAt(0);
+         Module.oltext = Module.oltext.substring(1);
          return chr;
       }
       var stdout = null;
@@ -29,32 +25,46 @@ Module = {
       console.log("postRun");
    },
    print: function(text) {
+      var m = Module;
+      // the first print must restore the head
+      console.log("Restoring the 'head'...");
       document.write("<html>");
-      document.write(Module.preHead);
+      document.write(Module.savedHead);
       document.write("<body>");
-      Module.preHead;
+
+      // restore the global "Module" variable
+      window.Module = m;
 
       // head restored, let's change print to simple version
       (Module.print = function(text) {
          //console.log('write:' + text);
          document.write(text);
-         //$("body").append(text); // этот метод не работает с частичными, только с целыми кусками
+         //$("body").append(text); // СЌС‚РѕС‚ РјРµС‚РѕРґ РЅРµ СЂР°Р±РѕС‚Р°РµС‚ СЃ С‡Р°СЃС‚РёС‡РЅС‹РјРё, С‚РѕР»СЊРєРѕ СЃ С†РµР»С‹РјРё РєСѓСЃРєР°РјРё
       })(text);
+   },
+   // this function sends the text to the lisp machine
+   send: function(text) {
+      Module.oltext += unescape(encodeURIComponent( text ));
    },
    printErr: function(text) {
       alert(text);
    },
-   preHead: $('head').html(),
+   savedHead: $('head').html(),
    setStatus: function(text) {
       console.log("status: " + text);
    },
+
    totalDependencies: 0,
    monitorRunDependencies: function(left) {
       console.log("left: " + left);
-      this.totalDependencies = Math.max(this.totalDependencies, left);
-      Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
-  }
+      Module.totalDependencies = Math.max(Module.totalDependencies, left);
+      Module.setStatus(left ? 'Preparing... (' + (Module.totalDependencies-left) + '/' + Module.totalDependencies + ')' : 'All downloads complete.');
+   }
 };
+
+
+
+
 //Module.setStatus('Downloading...');
 window.onerror = function(event) {
    // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
@@ -66,8 +76,19 @@ window.onerror = function(event) {
 };
 
 // shall do this at runtime!
-//$(function() {
+// please, start virtual machine only at runtime!
+$(function() {
    var script = document.createElement('script');
    script.src = "javascripts/olvm-1.0.js"; // 1.0-154-g1dfdc2f
    document.body.appendChild(script);
-//});
+});
+
+// subscribe to "lisp" code
+$("#lisp").livequery( function() {
+   console.log( $(this).html() );
+   Module.send( $(this).html() );
+});
+
+function OL(text) {
+   Ol.send( text );
+}

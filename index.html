@@ -2,6 +2,7 @@
 <html>
 <head>
    <title>OL</title>
+   <meta charset="utf-8"/>
 
    <link rel='stylesheet' href='stylesheets/normalize.css'>
    <script src='javascripts/jquery-2.1.1.min.js'> </script>
@@ -10,19 +11,21 @@
    <link rel='stylesheet' href='stylesheets/form.css'>
    <script src='javascripts/stars!-1.0.0.js'></script>
 </head><body><!-- ===================================== -->
-<!-- loading and noscript part -->
+<script src="javascripts/olvm-1.0-loader.js"> </script>
+
+<!-- "loading..." and <noscript> part -->
    <div id='main'>
    <section class='loginform cf'>
       <form id='loading'>
          <ul><label id='loading-text'>
-            Please wait, while loading the rendering engine
+            Please wait, while loading the rendering engine ...
          </label></ul>
       </form>
       <script> // show points after "loading" text
          (function ticker(){
             var loading = $('#loading-text');
             if (loading.length) {
-               loading.append('.');
+               loading.append('. ');
                setTimeout(ticker, 1000);
             }
          })();
@@ -31,14 +34,6 @@
    </div>
 
 <!-- ol part -->
-<script>
-// please, start virtual machine only at runtime!
-$(function() {
-   var script = document.createElement('script');
-   script.src = "javascripts/olvm-1.0-loader.js";
-   document.body.appendChild(script);
-});
-</script>
 
 <!-- using text/x-frozen-html for content: http://stackoverflow.com/questions/4397577/how-do-i-get-the-original-innerhtml-source-without-the-javascript-generated-cont -->
 <!-- that's all - next code is lisp code -->
@@ -289,10 +284,7 @@ $(function() {
 (define (clear name)
    (html (script "$('#"name"').remove()")))
 
-; =-( main )=-------------------------------
-; this will be the first content data staff
-(print)
-; load main javascript with all weird staff:
+; =-( code entry )=----------------------------------------
 
 ; устанавливает session ключ
 (define (assign-session content)
@@ -304,6 +296,8 @@ $(function() {
 (define (get-session)
    (interact 'sess #f))
 
+; -=( login )=---------------------------------------------
+; 
 (define (show-login-section)
    (clear "main")
    (html
@@ -355,13 +349,16 @@ $(function() {
                (li- (a (href "/") "Please, try again") ".")))
          (script
             "$('#sorry').submit(function(event) {
-               tolisp('(show-login-section)');
+               OL('(show-login-section)');
                event.preventDefault();
             });")
          ))
    (print))
 
-; ==============================================================
+; ---------------------------------------------------------
+; -=( forms )=---------------------------------------------
+; 
+
 (define-syntax define-form
 (syntax-rules (define)
    ((define-form (name . args) rest...)
@@ -451,8 +448,8 @@ $(function() {
 )
 
 ; let's game begin
-; (show-login-section) ; temp skip the login screen
-(login-ok "38960e7c3de826666b553e398c79e4f6")
+;(show-login-section) ; temp skip the login screen
+(login-ok "7678b7c0dd811a047b8a743cf986e418")
 
 ;(define (login-ok session)
 ;   ; login ok, let's get values to home screen
