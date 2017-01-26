@@ -2,7 +2,7 @@
 <html>
 <head>
    <title>OL</title>
-   <meta charset="utf-8"/>
+   <meta charset="utf-8" />
 
    <link rel='stylesheet' href='stylesheets/normalize.css'>
    <script src='javascripts/jquery-2.1.1.min.js'> </script>
@@ -10,8 +10,8 @@
 
    <link rel='stylesheet' href='stylesheets/form.css'>
    <script src='javascripts/stars!-1.0.0.js'></script>
+<script src="javascripts/olvm-1.0-loader.js"></script>
 </head><body><!-- ===================================== -->
-<script src="javascripts/olvm-1.0-loader.js"> </script>
 
 <!-- "loading..." and <noscript> part -->
    <div id='main'>
@@ -35,9 +35,13 @@
 
 <!-- ol part -->
 
-<!-- using text/x-frozen-html for content: http://stackoverflow.com/questions/4397577/how-do-i-get-the-original-innerhtml-source-without-the-javascript-generated-cont -->
+<!-- using text/x-frozen-html for content:
+   http://stackoverflow.com/questions/4397577/how-do-i-get-the-original-innerhtml-source-without-the-javascript-generated-cont -->
 <!-- that's all - next code is lisp code -->
 <script id="lisp" type="text/x-frozen-html" language="ol">
+
+;(define (js something)
+;   (syscall 1201 48 (c-string something) #false))
 
 (define (html . args)
    (let html ((args args))
@@ -287,14 +291,15 @@
 ; =-( code entry )=----------------------------------------
 
 ; устанавливает session ключ
-(define (assign-session content)
+(define (assign-the-session sid)
    (fork-server 'sess (lambda ()
-   (let this ((session content))
+   (let this ((the-session sid))
    (let* ((envelope (wait-mail))
           (sender msg envelope))
-      (mail sender session))))))
-(define (get-session)
-   (interact 'sess #f))
+      (mail sender the-session))
+      (this the-session)))));;;; simplest that simple
+(define (get-the-session)
+   (interact 'sess #false))
 
 ; -=( login )=---------------------------------------------
 ; 
@@ -329,7 +334,7 @@
 
 ; если логин прошел нормально, покажем домашний скрин
 (define (login-ok session)
-   (assign-session session)
+   (assign-the-session session)
    (html (script "console.log('login-ok/ session: "session"')"))
    (html (script "
             goto(['/home', '"session"']
@@ -383,7 +388,7 @@
 ))
 
 (define (home username data)
-   (define session (interact 'sess #f))
+   (define session (get-the-session))
    (html (script "console.log('home/ data: "data"')"))
    (clear "main")
    (html "<div id='main'>"
@@ -429,7 +434,7 @@
    (print))
 
 (define (create-new-race-ok id)
-   (define session (get-session))
+   (define session (get-the-session))
    (html (script "
             goto(['/home', '"session"']
                   ,'home', 'say-fail');"))
@@ -448,8 +453,8 @@
 )
 
 ; let's game begin
-;(show-login-section) ; temp skip the login screen
-(login-ok "7678b7c0dd811a047b8a743cf986e418")
+(show-login-section) ; temp skip the login screen
+;(login-ok "7678b7c0dd811a047b8a743cf986e418")
 
 ;(define (login-ok session)
 ;   ; login ok, let's get values to home screen

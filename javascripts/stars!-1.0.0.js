@@ -1,5 +1,5 @@
 // -=( some usefull/weird staff )=----------------------------
-var Module;
+//var Module;
 function goto(url, ok, fail) {
    console.log('trying to go to ' + url);
    var address = url[0];
@@ -20,12 +20,12 @@ function goto(url, ok, fail) {
    }).done(function(text) {
       console.log(address + " ok.");
       console.log("trying to call " + '('+ok+' '+ text +')');
-      Module.send('('+ok+' '+ text +')\n');
+      (window.Module || window.localStorage.Ol).send('('+ok+' '+ text +')\n');
    }).error(function(text) {
       console.log(address + " failed.");
       console.log(text);
       console.log("trying to call " + '('+fail+' '+ text.status +')');
-      Module.send('('+fail+' '+ text.status +')\n');
+      (window.Module || window.localStorage.Ol).send('('+fail+' '+ text.status +')\n');
    });
 }
 
