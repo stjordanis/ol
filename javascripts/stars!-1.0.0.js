@@ -20,13 +20,22 @@ function goto(url, ok, fail) {
    }).done(function(text) {
       console.log(address + " ok.");
       console.log("trying to call " + '('+ok+' '+ text +')');
-      (window.Module || window.localStorage.Ol).send('('+ok+' '+ text +')\n');
+      Module.send('('+ok+' '+ text +')');
+      console.log("--1");
+      Module.send("\r\n");
+      //(window.Module || window.localStorage.Ol).send('('+ok+' '+ text +')\n');
    }).error(function(text) {
       console.log(address + " failed.");
       console.log(text);
       console.log("trying to call " + '('+fail+' '+ text.status +')');
-      (window.Module || window.localStorage.Ol).send('('+fail+' '+ text.status +')\n');
+      Module.send('('+fail+' '+ text.status +')');
+      console.log("--2");
+      Module.send("\r\n");
+      //(window.Module || window.localStorage.Ol).send('('+fail+' '+ text.status +')\n');
    });
+
+   console.log("fyi: false");
+   return false;
 }
 
 function redirect() {

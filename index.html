@@ -14,8 +14,8 @@
 </head><body><!-- ===================================== -->
 
 <!-- "loading..." and <noscript> part -->
-   <div id='main'>
-   <section class='loginform cf'>
+   <section id='main'
+            class='loginform cf'>
       <form id='loading'>
          <ul><label id='loading-text'>
             Please wait, while loading the rendering engine ...
@@ -31,7 +31,6 @@
          })();
       </script>
    </section>
-   </div>
 
 <!-- ol part -->
 
@@ -40,8 +39,10 @@
 <!-- that's all - next code is lisp code -->
 <script id="lisp" type="text/x-frozen-html" language="ol">
 
-;(define (js something)
-;   (syscall 1201 48 (c-string something) #false))
+(define (! . something)
+   (let ((x (fold string-append "" something)))
+      (print x)
+      (syscall 1201 3 (c-string x) #false)))
 
 (define (html . args)
    (let html ((args args))
@@ -57,10 +58,7 @@
 (define-syntax script
 (syntax-rules ()
    ((script rest...)
-      (list
-         "<" "script>"
-           rest...
-         "</" "script" ">"))))
+      (! rest...))))
 
 (define-syntax tag
 (syntax-rules ()
@@ -285,8 +283,6 @@
          (cons (apply f (car a)) (loop (cdr a))))))
 
 ; actions:
-(define (clear name)
-   (html (script "$('#"name"').remove()")))
 
 ; =-( code entry )=----------------------------------------
 
@@ -304,7 +300,7 @@
 ; -=( login )=---------------------------------------------
 ; 
 (define (show-login-section)
-   (clear "main")
+   (! "$('#main').remove()")
    (html
       (section (id "main")
                (class "loginform cf")
@@ -322,27 +318,18 @@
                           (required)))
                (li-
                    (input (type "submit") (value "Login")))))
-         (script
-            "$('#login').submit(function(event) {
-               goto([login.action,
-                     login.elements.usermail.value,
-                     login.elements.password.value]
-                     ,'login-ok', 'login-failed');
-               event.preventDefault();
-            });")))
+         ))
+   (! "$('#login').submit(function(event) {
+         goto([login.action,
+               login.elements.usermail.value,
+               login.elements.password.value]
+               , 'login-ok', 'login-failed');
+         event.preventDefault();
+      });")
    (print))
 
-; если логин прошел нормально, покажем домашний скрин
-(define (login-ok session)
-   (assign-the-session session)
-   (html (script "console.log('login-ok/ session: "session"')"))
-   (html (script "
-            goto(['/home', '"session"']
-                  ,'home', '-fail-');"))
-   (print))
-
-(define (login-failed status)
-   (clear "main")
+(define (login-failed error)
+   (! "$('#main').remove()")
    (html
       (section (id "main")
                (class "loginform cf")
@@ -351,50 +338,55 @@
                (action "/")
             (ul
                (li (label "Sorry, name or password is invalid."))
-               (li- (a (href "/") "Please, try again") ".")))
-         (script
-            "$('#sorry').submit(function(event) {
-               OL('(show-login-section)');
-               event.preventDefault();
-            });")
-         ))
+               (li-
+                   (input (type "submit") (value "Please, try again.")))))))
+   (! "$('#sorry').submit(function(event) {
+         OL('(show-login-section)');
+         event.preventDefault();
+      });")
+   (print))
+
+
+; если логин прошел нормально, покажем домашний скрин
+(define (login-ok session)
+   (! "console.log('login-ok/ session: "session"')")
+
+   (assign-the-session session)
+   (! "goto(['/home', '"session"']
+             ,'home', '-fail-');")
    (print))
 
 ; ---------------------------------------------------------
 ; -=( forms )=---------------------------------------------
-; 
+;
 
-(define-syntax define-form
-(syntax-rules (define)
-   ((define-form (name . args) rest...)
-      (define (name . args) ; aditional logging can be done using lambda and apply
-         (html (script
-                     "console.log('" (quote name) ": " "')"
-                     "$('#main').remove()")
-            (section (id "main")
-                     (class "loginform cf")
-               rest...))
-         (print)))))
-(define-syntax action
-(syntax-rules ()
-   ((action text (url . args) ok fail)
-       (list "<a href=\"#\" onclick=\"goto(["
-                                 (fold (lambda (n x) (fold string-append "" (list n ", " "'"x"'")))
-                                    (fold string-append "" (list "'" url "'")) (list .args)
-                                 )
-                                           "], '"ok"', '"fail"'); return false;\">"
+(define (action text args ok fail)
+   (let ((url (car args))
+         (args (cdr args)))
+      (list
+          "<a href='#' onclick=\"goto(['/home', '"123456789"'],'"ok"', '"fail"');\">"
           text
-          "</a>"))
-))
+          "</a>"
+          )))
+
+            ;
+            ;(fold (lambda (n x) (fold string-append "" (list n ", " "'"x"'")))
+            ;   (fold string-append "" (list "'" url "'")) (list args)
+            ;)
+            ;"], '"ok"', '"fail"'); return false;\">"
+          ;
 
 (define (home username data)
+   (! "console.log('home/ username: " username "')")
+
    (define session (get-the-session))
-   (html (script "console.log('home/ data: "data"')"))
-   (clear "main")
-   (html "<div id='main'>"
-         "<br>"
-         "Hello " username
-         "<br><hr><br>"
+   ;(! "$('#main').remove()")
+   (! "document.body.innerHTML = ''")
+   (html
+      "Hello " username
+;      (section (id "main")
+;               (class "loginform cf")
+;         "Hello " username
 
    ; в эту табличку мы поместим все расы игрока и играемые ними игры:
          (table
@@ -426,69 +418,29 @@
                                  (a (href "/create-new-game/"session"/"rid) "(create new game)")))))))
                   data)
                (tr (td (colspan 2) (style "text-align:center")
-                  (action "(create new race)"
-                     ("/create-new-race" session) "say-ok" "say-fail")
-                  )))
-
-         "</div>")
+                      (a (href "javascript:;")
+                         (onclick "goto(['/create-new-race/"session"'], 'create-new-race-ok', 'say-fail')")
+                         "do something")
+                  ))))
    (print))
 
+                  ;(action "(create new race)"
+                  ;   ("/create-new-race" session) "say-ok" "say-fail")
+
 (define (create-new-race-ok id)
-   (define session (get-the-session))
-   (html (script "
-            goto(['/home', '"session"']
-                  ,'home', 'say-fail');"))
-   (print)
-)
+   (! "console.log('create-new-race-ok/ id: " id "')")
+   (! "goto(['/home', '" (get-the-session) "']
+             ,'home', '-fail-');")
+   (print))
 
-(define (say-ok ok)
+(define (say-ok . ok)
    (print ok))
-(define (say-fail fail)
+(define (say-fail . fail)
    (print fail))
-
-(define (create-new-race)
-   ;(define session (get-session))
-   (print "create-new-race: ")
-   ; do something
-)
 
 ; let's game begin
 (show-login-section) ; temp skip the login screen
 ;(login-ok "7678b7c0dd811a047b8a743cf986e418")
-
-;(define (login-ok session)
-;   ; login ok, let's get values to home screen
-;         ; request new home
-;   (html (script "
-;            goto(['/home/', "session"],
-;                  ,'home', '-fail-');
-;         "))
-
-
-; ===============================================================
-; домашний экран пользователя
-;(define (home session)
-;   (html (script "$('#main').remove()"))
-;
-;
-;      (
-;
-;
-;)
-
-
-
-;                        ; ok
-;                        (script "goto('/home/"session"')")
-;                        ; error
-;                        (section (class "loginform cf")
-;                           (form (id "sorry")
-;                                 (action "/")
-;                                 (onsubmit "window.location = '/'; return false")
-;                              (ul
-;                                 (li (label "Sorry, name or password is invalid."))
-;                                 (li (a (href "/") "Please, try again") "."))))))))
-
 
 (print) ;flush (на всякий случай)
 </script></body></html>
