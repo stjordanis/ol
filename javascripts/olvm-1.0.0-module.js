@@ -15,7 +15,7 @@ Module = (function() {
    console.log("Module creation");
 
 return {
-   oltext: unescape(encodeURIComponent( "(print)" )), // сразу сбросим буфер
+   oltext: unescape(encodeURIComponent( '(print "<>")' )), // сразу сбросим буфер
    preRun: function() {
       console.log("preRun");
       // redefine stdin:
@@ -46,8 +46,15 @@ return {
    },
    printS: "",
    print: function(text) {
+      //print.text = print.text || "";
       console.log(++timestamp + " print: " + text);
-      $("body").append(text); // этот метод не работает с частичными кусками, только с целым текстом
+      if (text == '<>') {
+         console.log(timestamp + " flush");
+         $("body").append(Module.printS); // этот метод не работает с частичными кусками, только с целым текстом
+         Module.printS = '';
+      }
+      else
+         Module.printS += text;
    },
 
    // this function sends the text to the lisp machine
@@ -73,6 +80,6 @@ return {
    // please, start virtual machine only at runtime!
    // let's start loading the olvm
    var script = document.createElement('script');
-   script.src = "javascripts/olvm-1.0.js"; // 1.0-154-g1dfdc2f
+   script.src = "javascripts/olvm-1.0.0.js"; // 1.0-154-g1dfdc2f
    document.body.appendChild(script);
 });

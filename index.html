@@ -4,13 +4,13 @@
    <title>OL</title>
    <meta charset="utf-8" />
 
-   <link rel='stylesheet' href='stylesheets/normalize.css'>
-   <script src='javascripts/jquery-2.1.1.min.js'> </script>
-   <script src='javascripts/jquery.livequery.js'> </script>
+   <link rel='stylesheet' href="stylesheets/normalize.css">
+   <script src="javascripts/jquery-2.1.1.min.js"> </script>
+   <script src="javascripts/jquery.livequery.js"> </script>
 
-   <link rel='stylesheet' href='stylesheets/form.css'>
-   <script src='javascripts/stars!-1.0.0.js'></script>
-<script src="javascripts/olvm-1.0-loader.js"></script>
+   <link rel='stylesheet' href="stylesheets/form.css">
+   <script src="javascripts/stars!-1.0.0.js"></script>
+   <script src="javascripts/olvm-1.0.0-module.js"></script>
 </head><body><!-- ===================================== -->
 
 <!-- "loading..." and <noscript> part -->
@@ -41,18 +41,20 @@
 
 (define (! . something)
    (let ((x (fold string-append "" something)))
-      (print x)
+      ;(print x)
       (syscall 1201 3 (c-string x) #false)))
 
 (define (html . args)
-   (let html ((args args))
+   (let loop ((args args))
       (for-each (lambda (arg)
          (if arg ; not #false
             (if (list? arg)
-               (html arg)
+               (loop arg)
                (if (not (null? arg))
                   (display arg)))))
-         args)))
+         args))
+   (print) ; это такой временный flush
+   (print "<>"))
 
 ; tag split into parts due to http://stackoverflow.com/questions/236073/why-split-the-script-tag-when-writing-it-with-document-write/236106#236106
 (define-syntax script
@@ -289,18 +291,18 @@
 ; устанавливает session ключ
 (define (assign-the-session sid)
    (fork-server 'sess (lambda ()
-   (let this ((the-session sid))
+   (let loop ((the-session sid))
    (let* ((envelope (wait-mail))
           (sender msg envelope))
       (mail sender the-session))
-      (this the-session)))));;;; simplest that simple
+      (loop the-session)))));;;; simplest than simple
 (define (get-the-session)
    (interact 'sess #false))
 
 ; -=( login )=---------------------------------------------
 ; 
 (define (show-login-section)
-   (! "$('#main').remove()")
+   (! "document.body.innerHTML = ''")
    (html
       (section (id "main")
                (class "loginform cf")
@@ -329,7 +331,7 @@
    (print))
 
 (define (login-failed error)
-   (! "$('#main').remove()")
+   (! "document.body.innerHTML = ''")
    (html
       (section (id "main")
                (class "loginform cf")
@@ -359,6 +361,14 @@
 ; ---------------------------------------------------------
 ; -=( forms )=---------------------------------------------
 ;
+(define-syntax define-form
+(syntax-rules ()
+   ((define-form (name args...) rest...)
+      (setq name (lambda (args...)
+                    (let ((session (get-the-session)))
+                       rest...
+                    ))))))
+
 
 (define (action text args ok fail)
    (let ((url (car args))
@@ -380,7 +390,6 @@
    (! "console.log('home/ username: " username "')")
 
    (define session (get-the-session))
-   ;(! "$('#main').remove()")
    (! "document.body.innerHTML = ''")
    (html
       "Hello " username
@@ -420,16 +429,15 @@
                (tr (td (colspan 2) (style "text-align:center")
                       (a (href "javascript:;")
                          (onclick "goto(['/create-new-race/"session"'], 'create-new-race-ok', 'say-fail')")
-                         "do something")
+                         "( create new race )")
                   ))))
    (print))
 
                   ;(action "(create new race)"
                   ;   ("/create-new-race" session) "say-ok" "say-fail")
 
-(define (create-new-race-ok id)
-   (! "console.log('create-new-race-ok/ id: " id "')")
-   (! "goto(['/home', '" (get-the-session) "']
+(define-form (create-new-race-ok id)
+   (! "goto(['/home', '"session"']
              ,'home', '-fail-');")
    (print))
 

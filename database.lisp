@@ -5,6 +5,7 @@
 ; account - обязательный атрибут для проверки ownership объектов, с которыми мы работаем
 
 ; account идентифицирует пользователя. один пользователь - один аккаунт
+(db:query "DROP TABLE IF EXISTS accounts")
 (db:query "CREATE TABLE accounts (
    id INTEGER PRIMARY KEY
 -- todo: store creation time of account, in 'dob' field or something like this
@@ -18,6 +19,7 @@
 ,  remote_address TEXT -- адрес, с которого зашли в аккаунт (todo: завести отдельную табличку, и позволить множественные заходы с разных адресов?)
 ,  logged_at DATETIME DEFAULT CURRENT_TIMESTAMP -- время последнего логина
 )")
+(db:query "DROP TABLE IF EXISTS account_logged_from")
 (db:query "CREATE TABLE account_logged_from (
    id INTEGER PRIMARY KEY
 ,  account REFERENCES accounts(id)
@@ -42,6 +44,7 @@
 
 ; в играх участвуют расы
 ; каждый пользователь может завести себе столько рас, сколько захочет
+(db:query "DROP TABLE IF EXISTS races")
 (db:query "CREATE TABLE races (
    id INTEGER PRIMARY KEY
 ,  name TEXT -- название расы
@@ -66,6 +69,7 @@
 
 
 ; список всех игр - законченных и текущих
+(db:query "DROP TABLE IF EXISTS games")
 (db:query "CREATE TABLE games (
    id INTEGER PRIMARY KEY
 ,  name TEXT  -- название игры
@@ -99,12 +103,14 @@
 
 ,  difficulty   INTEGER -- сложность (1 - easy, 2 - standard, 3 - harder, 4 - expert), на будущее так как относится к AI
 )")
+(db:query "DROP TABLE IF EXISTS game_players")
 (db:query "CREATE TABLE game_players (
    id INTEGER PRIMARY KEY -- не нужен
 ,  game REFERENCES games(id)
 ,  race REFERENCES races(id)
 ,  ready BOOLEAN DEFAULT 0
 )")
+(db:query "DROP TABLE IF EXISTS game_creation_chat")
 (db:query "CREATE TABLE game_creation_chat (
    id INTEGER PRIMARY KEY
 ,  game REFERENCES games(id)
