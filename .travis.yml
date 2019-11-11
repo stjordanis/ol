@@ -1,5 +1,8 @@
 language: c
 compiler: gcc
+arch:
+  amd64
+  arm64
 
 script: make describe tests rosettacode
 

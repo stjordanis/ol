@@ -1,18 +1,18 @@
-; http://www.rosettacode.org/wiki/Pi
+; http://www.rosettacode.org/wiki/Pi#Ol
 
-(define (pi numbers)
-   (let loop ((q 1) (r 0) (t 1) (k 1) (n 3) (l 3) (numbers numbers))
-      (unless (eq? numbers 0)
+(define (pi digits)
+   (let loop ((q 1) (r 0) (t 1) (k 1) (n 3) (l 3) (digits digits))
+      (unless (eq? digits 0)
          (if (< (- (+ (* 4 q) r) t) (* n t))
             (begin
                (display n)
-               (loop (* q  10)
+               (loop (* q 10)
                      (* 10 (- r (* n t)))
                      t
                      k
                      (- (div (* 10 (+ (* 3 q) r)) t) (* 10 n))
                      l
-                     (if numbers (- numbers 1))))
+                     (if digits (- digits 1))))
             (begin
                (loop (* q k)
                      (* (+ (* 2 q) r) l)
@@ -20,7 +20,6 @@
                      (+ k 1)
                      (div (+ (* q (* 7 k)) 2 (* r l)) (* t l))
                      (+ l 2)
-                     (if numbers (- numbers 1))))))))
+                     digits))))))
 
-(pi 5000)
-(print) ; just newline
+(pi 1000)
