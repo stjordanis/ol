@@ -14,13 +14,11 @@ describe: all
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
-	   \#include $2\n\
-	   char $3();\
-	   \
-	   int main() {\
-	      return $3();\
-	      return 0;\
-	   }" | $(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
+	char $3();\
+	\
+	int main() {\
+	   return $3();\
+	}" |$(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
 
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
@@ -202,7 +200,8 @@ src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
 tmp/repl.c: repl
-	xxd --include repl >tmp/repl.c
+	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
+#	xxd --include repl >tmp/repl.c
 
 # # emscripten version 1.37.40+
 # repl.js: repl
